@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ludo Online - Real-Time Multiplayer Board Game</title>
+  <meta name="description" content="Play the real-time online multiplayer Ludo game with friends across desktop, tablet, and mobile. Authoritative rules, interactive 3D dice, and live chat.">
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Socket.IO Client Library -->
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <div id="app" class="app-wrapper">
+
+    <!-- Global Notification Banner -->
+    <div id="global-alert" class="global-alert hidden" role="alert">
+      <span id="global-alert-text"></span>
+      <button id="btn-close-alert" class="alert-close-btn" aria-label="Close notification">&times;</button>
+    </div>
+
+    <!-- VIEW 1: HOME PAGE -->
+    <section id="view-home" class="view active">
+      <div class="lobby-card glass-panel">
+        <header class="lobby-header">
+          <div class="logo-badge">
+            <span class="dice-icon">🎲</span>
+            <span class="crown-icon">👑</span>
+          </div>
+          <h1 class="game-title">LUDO <span class="gradient-text">ONLINE</span></h1>
+          <p class="subtitle">Real-Time Multiplayer Experience (2 to 4 Players)</p>
+        </header>
+
+        <div class="form-group">
+          <label for="input-player-name" class="input-label">Your Nickname</label>
+          <div class="input-wrapper">
+            <input type="text" id="input-player-name" class="styled-input" placeholder="Enter your name (e.g. Bharath)" maxlength="16" autocomplete="off" spellcheck="false">
+          </div>
+        </div>
+
+        <div class="action-stack">
+          <button id="btn-home-create" class="btn btn-primary btn-glow">
+            <span class="btn-icon">⚡</span> CREATE GAME
+          </button>
+          
+          <button id="btn-home-join-modal" class="btn btn-secondary">
+            <span class="btn-icon">🔗</span> JOIN GAME
+          </button>
+
+          <button id="btn-home-rules" class="btn btn-tertiary">
+            <span class="btn-icon">📖</span> HOW TO PLAY
+          </button>
+        </div>
+
+        <div class="feature-tags">
+          <span class="tag">🔴 Red</span>
+          <span class="tag">🟢 Green</span>
+          <span class="tag">🟡 Yellow</span>
+          <span class="tag">🔵 Blue</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: WAITING LOBBY -->
+    <section id="view-lobby" class="view hidden">
+      <div class="waiting-card glass-panel">
+        <div class="lobby-top">
+          <span class="badge badge-pulse">ROOM CREATED</span>
+          <button id="btn-sound-toggle-lobby" class="btn-icon-round" aria-label="Toggle Sound" title="Sound On/Off">
+            <span class="sound-icon">🔊</span>
+          </button>
+        </div>
+
+        <h2 class="room-code-label">ROOM CODE</h2>
+        <div class="room-code-display-wrap">
+          <div id="display-room-code" class="room-code-text">LUDO-XXXXX</div>
+          <button id="btn-copy-room-code" class="btn btn-copy" title="Copy Room Code">
+            <span id="copy-btn-text">📋 COPY CODE</span>
+          </button>
+        </div>
+
+        <p id="lobby-status-text" class="waiting-pulse">WAITING FOR PLAYERS... (1/4)</p>
+
+        <!-- Player Slots List -->
+        <div class="players-slot-grid" id="lobby-player-slots">
+          <!-- Populated dynamically: 4 slots -->
+        </div>
+
+        <div class="lobby-actions">
+          <button id="btn-start-game" class="btn btn-primary btn-glow" disabled>
+            <span class="btn-icon">▶️</span> START GAME
+          </button>
+          <button id="btn-leave-lobby" class="btn btn-secondary">
+            LEAVE ROOM
+          </button>
+        </div>
+
+        <p class="lobby-tip">💡 Need at least 2 players to start. Game supports up to 4 players!</p>
+      </div>
+    </section>
+
+    <!-- VIEW 3: ACTIVE GAME -->
+    <section id="view-game" class="view hidden">
+      
+      <!-- Top Navigation & Status Bar -->
+      <header class="game-header glass-panel">
+        <div class="header-left">
+          <div class="room-pill" id="game-room-badge" title="Room Code">
+            <span class="pill-label">ROOM</span>
+            <span id="game-room-code-val" class="pill-code">LUDO-XXXXX</span>
+          </div>
+          <div class="player-count-pill" id="game-player-count-pill">
+            <span id="game-player-count-val">4/4 Players</span>
+          </div>
+        </div>
+
+        <!-- Center Turn Indicator -->
+        <div class="turn-banner" id="game-turn-banner">
+          <div class="turn-dot" id="banner-turn-dot"></div>
+          <span id="banner-turn-text" class="banner-text">Waiting for game start...</span>
+        </div>
+
+        <div class="header-right">
+          <button id="btn-sound-toggle" class="btn-icon-round" aria-label="Toggle Sound" title="Sound On/Off">
+            <span class="sound-icon">🔊</span>
+          </button>
+          <button id="btn-chat-toggle" class="btn-icon-round badge-parent" aria-label="Toggle Chat" title="Chat">
+            <span>💬</span>
+            <span id="chat-unread-badge" class="unread-badge hidden">0</span>
+          </button>
+          <button id="btn-leave-game" class="btn-icon-round btn-danger-round" aria-label="Leave Game" title="Leave Game">
+            <span>🚪</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Game Arena -->
+      <main class="game-arena">
+        
+        <!-- The 15x15 Ludo Board Wrapper -->
+        <div class="board-wrapper">
+          <div id="ludo-board" class="ludo-board">
+            <!-- 15x15 Grid Cells rendered dynamically by client/game.js -->
+          </div>
+        </div>
+
+        <!-- Dashboard / Player Panels & Dice Station -->
+        <div class="game-dashboard glass-panel">
+          
+          <!-- 4 Player Info Cards -->
+          <div class="players-cards-container" id="game-players-list">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Central Dice Station -->
+          <div class="dice-station" id="dice-station">
+            <div class="dice-display-area">
+              <!-- 3D Dice Element -->
+              <div id="dice-3d" class="dice-3d" data-value="1">
+                <div class="dice-face face-1"><span class="pip pip-center"></span></div>
+                <div class="dice-face face-2"><span class="pip pip-tl"></span><span class="pip pip-br"></span></div>
+                <div class="dice-face face-3"><span class="pip pip-tl"></span><span class="pip pip-center"></span><span class="pip pip-br"></span></div>
+                <div class="dice-face face-4"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
+                <div class="dice-face face-5"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-center"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
+                <div class="dice-face face-6"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-ml"></span><span class="pip pip-mr"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
+              </div>
+            </div>
+
+            <div class="dice-action-area">
+              <button id="btn-roll-dice" class="btn btn-primary btn-roll btn-glow" disabled>
+                <span class="roll-icon">🎲</span> ROLL DICE
+              </button>
+              <div id="dice-status-msg" class="dice-status-msg">Waiting for turn...</div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Slide-over Real-Time Chat Drawer -->
+      <aside id="chat-drawer" class="chat-drawer glass-panel hidden">
+        <div class="chat-header">
+          <div class="chat-title">
+            <span>💬 Live Game Chat</span>
+          </div>
+          <button id="btn-close-chat" class="btn-icon-round" aria-label="Close Chat">&times;</button>
+        </div>
+
+        <div id="chat-messages" class="chat-messages">
+          <div class="chat-system-msg">Welcome to the game! Keep it friendly.</div>
+        </div>
+
+        <!-- Quick Canned Messages -->
+        <div class="chat-quick-tags">
+          <button class="quick-msg-btn">Good game! 👏</button>
+          <button class="quick-msg-btn">Your turn! ⏳</button>
+          <button class="quick-msg-btn">Nice move! 🔥</button>
+          <button class="quick-msg-btn">Oops! 😅</button>
+          <button class="quick-msg-btn">Well played! 🏆</button>
+        </div>
+
+        <form id="chat-form" class="chat-input-bar">
+          <input type="text" id="chat-input" placeholder="Type a message..." maxlength="120" autocomplete="off">
+          <button type="submit" id="btn-send-chat" class="btn-send">➤</button>
+        </form>
+      </aside>
+    </section>
+
+    <!-- MODAL: JOIN GAME -->
+    <div id="modal-join" class="modal-backdrop hidden">
+      <div class="modal-dialog glass-panel">
+        <div class="modal-header">
+          <h3>Join Game Room</h3>
+          <button id="btn-close-join-modal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-sub">Enter the unique 10-character room code shared by your friend:</p>
+          <div class="form-group">
+            <label for="input-join-room-code" class="input-label">Room Code</label>
+            <input type="text" id="input-join-room-code" class="styled-input uppercase-input" placeholder="e.g. LUDO-7K9P2" maxlength="12" autocomplete="off">
+          </div>
+          <div id="join-error-msg" class="error-msg hidden"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-modal-join-submit" class="btn btn-primary btn-glow">JOIN GAME</button>
+          <button id="btn-modal-join-cancel" class="btn btn-secondary">CANCEL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: HOW TO PLAY RULES -->
+    <div id="modal-rules" class="modal-backdrop hidden">
+      <div class="modal-dialog glass-panel modal-lg">
+        <div class="modal-header">
+          <h3>📖 How to Play Ludo</h3>
+          <button id="btn-close-rules-modal" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body rules-content">
+          <div class="rule-section">
+            <h4>🎯 Goal of the Game</h4>
+            <p>Move all 4 of your colored tokens out of your base, around the perimeter track, and into the center home triangle before any opponent.</p>
+          </div>
+          <div class="rule-section">
+            <h4>🎲 Rolling a 6</h4>
+            <ul>
+              <li>A roll of <strong>6</strong> is required to bring a token out of the yard onto the starting square.</li>
+              <li>Rolling a <strong>6</strong> grants an <strong>EXTRA ROLL</strong>!</li>
+              <li>Rolling 3 consecutive sixes forfeits the turn to prevent infinite rolls.</li>
+            </ul>
+          </div>
+          <div class="rule-section">
+            <h4>⚔️ Capturing & Safe Squares</h4>
+            <ul>
+              <li>Landing on an opponent's token on any regular track square <strong>captures</strong> it! The captured token is sent back to its base, and you get an <strong>EXTRA ROLL</strong>!</li>
+              <li>Tokens on <strong>Safe Squares</strong> (marked with a Star ★ and shield) CANNOT be captured. Multiple players' tokens can safely coexist there.</li>
+            </ul>
+          </div>
+          <div class="rule-section">
+            <h4>🏁 Finishing</h4>
+            <ul>
+              <li>Tokens enter their player-colored home corridor and require an <strong>exact roll</strong> to reach the final center finish.</li>
+              <li>Finishing a token awards a bonus extra roll! First player to finish all 4 tokens wins! 🏆</li>
+            </ul>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-modal-rules-close" class="btn btn-primary">GOT IT!</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CELEBRATION MODAL: GAME WON -->
+    <div id="modal-winner" class="modal-backdrop hidden">
+      <div class="modal-dialog glass-panel winner-dialog">
+        <div class="winner-trophy">🏆</div>
+        <h2 class="winner-headline">WINNER!</h2>
+        <div id="winner-name-display" class="winner-player-name">RED PLAYER WINS!</div>
+        <p class="winner-subtitle">All 4 tokens successfully guided home!</p>
+        
+        <div class="winner-actions">
+          <button id="btn-new-game" class="btn btn-primary btn-glow">
+            <span class="btn-icon">🔄</span> NEW GAME
+          </button>
+          <button id="btn-winner-leave" class="btn btn-secondary">
+            LEAVE ROOM
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLOATING TOAST NOTIFICATION -->
+    <div id="event-toast" class="event-toast hidden">
+      <span id="toast-icon">✨</span>
+      <span id="toast-text">Notification</span>
+    </div>
+
+  </div>
+
+  <!-- Client Game Logic -->
+  <script src="game.js"></script>
+</body>
+</html>

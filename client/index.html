@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Ludo - Complete Offline Multiplayer</title>
+  <meta name="description" content="Play Ludo offline with 2 or 4 human players on the same device. 100% offline, zero internet or server required.">
+  
+  <!-- Offline Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app" class="app-container">
+
+    <!-- ================================================================
+         VIEW 1: START SCREEN & SETUP (OFFLINE MULTIPLAYER)
+         ================================================================ -->
+    <section id="view-start" class="view active">
+      <div class="menu-card glass-panel">
+        
+        <!-- Header -->
+        <header class="menu-header">
+          <div class="menu-logo">
+            <span class="logo-die">🎲</span>
+            <span class="logo-crown">👑</span>
+          </div>
+          <h1 class="main-title">LUDO</h1>
+          <h2 class="sub-title">OFFLINE MULTIPLAYER</h2>
+          <p class="tagline">Pass & Play on this device • 100% Offline • No Internet Required</p>
+        </header>
+
+        <!-- Continue Game Button (Shown if saved game exists) -->
+        <div id="continue-section" class="continue-section hidden">
+          <button id="btn-continue-game" class="btn btn-continue btn-glow">
+            <span class="btn-icon">⚡</span> CONTINUE GAME
+            <span id="continue-meta" class="continue-meta">(Saved Match)</span>
+          </button>
+          <div class="or-divider"><span>OR START NEW</span></div>
+        </div>
+
+        <!-- Mode Selection: 2 Players or 4 Players -->
+        <div class="mode-selector-group">
+          <span class="section-label">SELECT PLAYERS</span>
+          <div class="mode-buttons-row">
+            <button id="btn-mode-2p" class="btn btn-mode active" data-mode="2">
+              <span class="mode-icon">👥</span>
+              <span class="mode-text">2 PLAYERS</span>
+              <span class="mode-colors">🔴 🟢</span>
+            </button>
+            <button id="btn-mode-4p" class="btn btn-mode" data-mode="4">
+              <span class="mode-icon">👨‍👩‍👦‍👦</span>
+              <span class="mode-text">4 PLAYERS</span>
+              <span class="mode-colors">🔴 🟢 🟡 🔵</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Player Names Input Section -->
+        <div class="names-section">
+          <span class="section-label">PLAYER NAMES</span>
+          
+          <div class="names-grid" id="names-container">
+            <!-- Player 1: RED -->
+            <div class="player-input-card player-card-red">
+              <div class="input-badge">🔴 Player 1 (Red)</div>
+              <input type="text" id="input-p1" class="player-name-input" value="Player 1" maxlength="16" placeholder="Enter Player 1 Name" spellcheck="false" autocomplete="off">
+            </div>
+
+            <!-- Player 2: GREEN -->
+            <div class="player-input-card player-card-green">
+              <div class="input-badge">🟢 Player 2 (Green)</div>
+              <input type="text" id="input-p2" class="player-name-input" value="Player 2" maxlength="16" placeholder="Enter Player 2 Name" spellcheck="false" autocomplete="off">
+            </div>
+
+            <!-- Player 3: YELLOW (For 4-player mode) -->
+            <div class="player-input-card player-card-yellow hidden" id="card-p3">
+              <div class="input-badge">🟡 Player 3 (Yellow)</div>
+              <input type="text" id="input-p3" class="player-name-input" value="Player 3" maxlength="16" placeholder="Enter Player 3 Name" spellcheck="false" autocomplete="off">
+            </div>
+
+            <!-- Player 4: BLUE (For 4-player mode) -->
+            <div class="player-input-card player-card-blue hidden" id="card-p4">
+              <div class="input-badge">🔵 Player 4 (Blue)</div>
+              <input type="text" id="input-p4" class="player-name-input" value="Player 4" maxlength="16" placeholder="Enter Player 4 Name" spellcheck="false" autocomplete="off">
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="menu-actions">
+          <button id="btn-start-game" class="btn btn-primary btn-glow btn-large">
+            <span class="btn-icon">▶️</span> START GAME
+          </button>
+          
+          <div class="secondary-actions-row">
+            <button id="btn-open-rules" class="btn btn-secondary">
+              <span class="btn-icon">📖</span> RULES
+            </button>
+            <button id="btn-toggle-sound-menu" class="btn btn-secondary sound-toggle-btn">
+              <span class="sound-icon">🔊</span> SOUND ON
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================================================================
+         VIEW 2: ACTIVE GAME ARENA
+         ================================================================ -->
+    <section id="view-game" class="view hidden">
+      
+      <!-- Top Control & Status Bar -->
+      <header class="game-header glass-panel">
+        
+        <!-- Left: Match Mode Badge -->
+        <div class="header-left">
+          <div class="match-mode-pill" id="match-mode-pill">
+            <span id="pill-mode-text">2 PLAYERS</span>
+          </div>
+        </div>
+
+        <!-- Center: Turn Announcement Banner -->
+        <div class="turn-banner" id="game-turn-banner">
+          <div class="turn-dot" id="turn-dot"></div>
+          <span id="turn-status-text" class="turn-text">🔴 Player 1's Turn</span>
+        </div>
+
+        <!-- Right: Control Buttons -->
+        <div class="header-controls">
+          <button id="btn-sound-game" class="btn-icon-btn sound-toggle-btn" title="Toggle Sound" aria-label="Toggle Sound">
+            <span class="sound-icon">🔊</span>
+          </button>
+          <button id="btn-rules-game" class="btn-icon-btn" title="Game Rules" aria-label="Game Rules">
+            <span>📖</span>
+          </button>
+          <button id="btn-restart-game" class="btn-icon-btn" title="Restart Match" aria-label="Restart Match">
+            <span>🔄</span>
+          </button>
+          <button id="btn-exit-menu" class="btn-icon-btn btn-exit" title="Exit to Menu" aria-label="Exit to Menu">
+            <span>🏠</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Game Arena -->
+      <main class="game-arena">
+        
+        <!-- 15x15 Ludo Board Container -->
+        <div class="board-frame">
+          <div id="ludo-board" class="ludo-board">
+            <!-- 15x15 Cells and Bases rendered by script.js -->
+          </div>
+        </div>
+
+        <!-- Dashboard: Player Cards & 3D Dice Station -->
+        <aside class="game-dashboard glass-panel">
+          
+          <!-- Active Player Status Cards -->
+          <div class="players-list-panel" id="players-list-panel">
+            <!-- Populated dynamically (2 or 4 players) -->
+          </div>
+
+          <!-- Central Dice Station -->
+          <div class="dice-station" id="dice-station">
+            <div class="dice-perspective-wrap">
+              <!-- 3D CSS Dice -->
+              <div id="dice-cube" class="dice-cube" data-value="1">
+                <div class="dice-face face-1"><span class="pip pip-center"></span></div>
+                <div class="dice-face face-2"><span class="pip pip-tl"></span><span class="pip pip-br"></span></div>
+                <div class="dice-face face-3"><span class="pip pip-tl"></span><span class="pip pip-center"></span><span class="pip pip-br"></span></div>
+                <div class="dice-face face-4"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
+                <div class="dice-face face-5"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-center"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
+                <div class="dice-face face-6"><span class="pip pip-tl"></span><span class="pip pip-tr"></span><span class="pip pip-ml"></span><span class="pip pip-mr"></span><span class="pip pip-bl"></span><span class="pip pip-br"></span></div>
+              </div>
+            </div>
+
+            <!-- Roll Action Area -->
+            <div class="dice-controls">
+              <button id="btn-roll-dice" class="btn btn-primary btn-roll btn-glow">
+                <span class="btn-icon">🎲</span> ROLL DICE
+              </button>
+              <div id="dice-message" class="dice-message">Tap ROLL DICE to start!</div>
+            </div>
+          </div>
+
+          <!-- In-Game Quick Action Row -->
+          <div class="in-game-actions">
+            <button id="btn-sub-new-game" class="btn btn-sm btn-secondary">
+              <span>➕</span> New Game
+            </button>
+            <button id="btn-sub-restart" class="btn btn-sm btn-secondary">
+              <span>🔄</span> Restart
+            </button>
+            <button id="btn-sub-menu" class="btn btn-sm btn-secondary">
+              <span>🏠</span> Menu
+            </button>
+          </div>
+
+        </aside>
+      </main>
+
+    </section>
+
+    <!-- ================================================================
+         MODAL: RULES
+         ================================================================ -->
+    <div id="modal-rules" class="modal-backdrop hidden">
+      <div class="modal-box glass-panel modal-lg">
+        <div class="modal-header">
+          <h3>📖 Standard Ludo Rules</h3>
+          <button id="btn-close-rules" class="btn-close-modal" aria-label="Close Rules">&times;</button>
+        </div>
+        <div class="modal-body rules-text">
+          <div class="rule-block">
+            <h4>🎯 Goal</h4>
+            <p>Guide all 4 of your colored tokens from your Home Yard around the 52-square track and into the Center Finishing Triangle before any opponent.</p>
+          </div>
+          <div class="rule-block">
+            <h4>🎲 Rolling a 6 & Extra Turns</h4>
+            <ul>
+              <li>A roll of <strong>6</strong> is required to release a token from the yard onto the starting square.</li>
+              <li>Rolling a <strong>6</strong> grants an <strong>EXTRA ROLL</strong>!</li>
+              <li><strong>Three 6s rule</strong>: Rolling three consecutive 6s forfeits the turn to prevent infinite rolling.</li>
+            </ul>
+          </div>
+          <div class="rule-block">
+            <h4>⚔️ Capturing & Safe Squares</h4>
+            <ul>
+              <li>Landing on an opponent's token on any regular track square <strong>captures</strong> it! The opponent token returns to its yard, and you get an <strong>EXTRA ROLL</strong>!</li>
+              <li>Tokens resting on <strong>Safe Squares</strong> (marked with a Star ★) CANNOT be captured. Opponent tokens can safely share safe squares.</li>
+            </ul>
+          </div>
+          <div class="rule-block">
+            <h4>🏁 Home Path & Exact Finish</h4>
+            <ul>
+              <li>After completing a full circuit, tokens enter their player-colored home runway.</li>
+              <li>Tokens require an <strong>exact dice roll</strong> to enter the final center triangle.</li>
+              <li>Finishing a token awards a bonus extra roll!</li>
+            </ul>
+          </div>
+          <div class="rule-block">
+            <h4>🏆 Winning</h4>
+            <p>The first player to get all 4 tokens into the center finish wins the game!</p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-rules-ok" class="btn btn-primary">GOT IT!</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         MODAL: WINNER CELEBRATION
+         ================================================================ -->
+    <div id="modal-winner" class="modal-backdrop hidden">
+      <div class="modal-box glass-panel winner-box">
+        <div class="trophy-anim">🏆</div>
+        <h2 class="winner-title">WINNER!</h2>
+        <div id="winner-name" class="winner-player-name">RED PLAYER WINS!</div>
+        <p class="winner-desc">All 4 tokens have successfully reached home!</p>
+        
+        <div class="winner-buttons">
+          <button id="btn-winner-new-game" class="btn btn-primary btn-glow">
+            <span>🔄</span> PLAY AGAIN
+          </button>
+          <button id="btn-winner-exit" class="btn btn-secondary">
+            <span>🏠</span> EXIT TO MENU
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating Event Notification Toast -->
+    <div id="event-toast" class="event-toast hidden">
+      <span id="toast-icon">✨</span>
+      <span id="toast-text">Notification text</span>
+    </div>
+
+  </div>
+
+  <!-- Complete Local Script (No External Dependencies) -->
+  <script src="script.js"></script>
+</body>
+</html>
